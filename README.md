@@ -40,7 +40,7 @@ A polished reference application demonstrating **side-by-side comparison** of Op
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/your-username/image-generation-prompt-flow.git
+git clone https://github.com/backblaze-b2-samples/image-generation-prompt-flow.git
 cd image-generation-prompt-flow
 pnpm install
 ```
