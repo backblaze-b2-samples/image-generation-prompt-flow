@@ -26,13 +26,23 @@ if [ -f "data/sqlite.db" ]; then
   fi
 fi
 
+# Detect package manager
+if command -v pnpm &> /dev/null; then
+  PKG_MANAGER="pnpm"
+elif command -v npm &> /dev/null; then
+  PKG_MANAGER="npm"
+else
+  echo "❌ Error: Neither pnpm nor npm found. Please install Node.js first."
+  exit 1
+fi
+
 # Push schema to create database
-echo "📋 Creating database schema..."
-pnpm run db:push
+echo "📋 Creating database schema using $PKG_MANAGER..."
+$PKG_MANAGER run db:push
 
 echo "✅ Database initialized successfully at data/sqlite.db"
 echo ""
 echo "Next steps:"
 echo "  1. Copy .env.example to .env (or create .env)"
 echo "  2. Add your API keys to .env"
-echo "  3. Run 'pnpm run dev' to start the development server"
+echo "  3. Run 'npm run dev' to start the development server"

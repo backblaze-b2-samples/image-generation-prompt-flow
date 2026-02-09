@@ -29,8 +29,7 @@ A polished reference application demonstrating **side-by-side comparison** of Op
 
 ### Prerequisites
 
-- **Node.js 18+**
-- **pnpm** (recommended) or npm
+- **Node.js 18+** - [Download here](https://nodejs.org/)
 - **[Backblaze B2 Account](https://www.backblaze.com/sign-up/cloud-storage?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=promptflow)** (free tier available)
   - Create a bucket
   - Generate an Application Key with `readFiles`, `writeFiles` permissions
@@ -42,7 +41,7 @@ A polished reference application demonstrating **side-by-side comparison** of Op
 ```bash
 git clone https://github.com/backblaze-b2-samples/image-generation-prompt-flow.git
 cd image-generation-prompt-flow
-pnpm install
+npm install
 ```
 
 ### 2. Configure Environment
@@ -78,13 +77,17 @@ GOOGLE_AI_API_KEY=...
 
 ```bash
 ./scripts/init-db.sh
-# Or manually: pnpm run db:push
+```
+
+Or manually:
+```bash
+npm run db:push
 ```
 
 ### 4. Start the App
 
 ```bash
-pnpm dev
+npm run dev
 ```
 
 **That's it!** Open **http://localhost:3000** in your browser.
@@ -223,8 +226,8 @@ vercel
 ### Deploy to Railway / Render / Fly.io
 
 - Set environment variables from `.env`
-- Set build command: `pnpm build`
-- Set start command: `pnpm start`
+- Set build command: `npm run build`
+- Set start command: `npm start`
 - Ensure persistent volume for SQLite database
 
 ### Deploy Database
@@ -242,17 +245,17 @@ turso db show image-gen
 
 ```bash
 # Type checking
-pnpm tsc --noEmit
+npm run tsc --noEmit
 
 # Linting
-pnpm lint
+npm run lint
 
 # Database studio
-pnpm db:studio
+npm run db:studio
 
 # Database migrations
-pnpm db:generate
-pnpm db:push
+npm run db:generate
+npm run db:push
 ```
 
 ## Limitations
@@ -308,14 +311,14 @@ pnpm db:push
 1. Verify B2 credentials in `.env`
 2. Check bucket exists and region matches
 3. Ensure Application Key has `writeFiles` permission
-4. Test with: `pnpm run test-b2` (if script exists)
+4. Check network connectivity to B2 endpoint
 
 ### Database Errors
 
 **Problem**: Database connection or migration errors.
 
 **Solution**:
-1. Run `pnpm db:push` to sync schema
+1. Run `npm run db:push` to sync schema
 2. Delete `./data/sqlite.db` and reinitialize
 3. Check `DATABASE_URL` path is correct
 4. Ensure `./data` directory exists
