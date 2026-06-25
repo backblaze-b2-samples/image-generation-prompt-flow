@@ -159,7 +159,7 @@ User request: "${userRequest}"`;
       }
 
       // Generic error fallback
-      throw new Error(`Request analysis failed: ${errorMessage.substring(0, 200)}`);
+      throw new Error(`Action plan generation failed: ${errorMessage.substring(0, 200)}`);
     }
 
     throw new Error("An unexpected error occurred while analyzing your request.");
@@ -170,7 +170,7 @@ function parseActionPlanResponse(text: string): Omit<ActionPlan, "referenceAnaly
   const jsonText = extractJsonObject(text);
 
   if (!jsonText) {
-    throw new Error("Gemini returned an empty or non-JSON request analysis response.");
+    throw new Error("Gemini returned an empty or non-JSON action plan response.");
   }
 
   let parsed: unknown;
@@ -178,11 +178,11 @@ function parseActionPlanResponse(text: string): Omit<ActionPlan, "referenceAnaly
     parsed = JSON.parse(jsonText);
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown parse error";
-    throw new Error(`Gemini returned invalid JSON for request analysis: ${message}`);
+    throw new Error(`Gemini returned invalid JSON for the action plan: ${message}`);
   }
 
   if (!isRecord(parsed)) {
-    throw new Error("Gemini returned a request analysis response that was not a JSON object.");
+    throw new Error("Gemini returned an action plan response that was not a JSON object.");
   }
 
   const intent = requireStringField(parsed, "intent");
@@ -234,7 +234,7 @@ function requireStringField(
     return fieldValue.trim();
   }
 
-  throw new Error(`Gemini request analysis is missing required string field "${fieldName}".`);
+  throw new Error(`Gemini action plan is missing required string field "${fieldName}".`);
 }
 
 function optionalStringField(
@@ -261,7 +261,7 @@ function requireStringArrayField(
       .map((item, index) => {
         if (typeof item !== "string" || !item.trim()) {
           throw new Error(
-            `Gemini request analysis list field "${fieldName}" contains an invalid entry at index ${index}.`
+            `Gemini action plan list field "${fieldName}" contains an invalid entry at index ${index}.`
           );
         }
 
@@ -277,7 +277,7 @@ function requireStringArrayField(
     return [fieldValue.trim()];
   }
 
-  throw new Error(`Gemini request analysis is missing required list field "${fieldName}".`);
+  throw new Error(`Gemini action plan is missing required list field "${fieldName}".`);
 }
 
 export async function* generateThinkingTrace(
