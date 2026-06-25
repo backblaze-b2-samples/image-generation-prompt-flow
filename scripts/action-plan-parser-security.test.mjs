@@ -47,6 +47,15 @@ test("ignores earlier non-JSON fenced blocks before an action plan", () => {
   assert.deepEqual(result.subjects, ["mountain", "lake"]);
 });
 
+test("uses later candidates after invalid JSON fenced blocks", () => {
+  const result = parseActionPlanResponse(
+    `\`\`\`json\n{ignored}\n\`\`\`\n${serializeActionPlan()}`
+  );
+
+  assert.equal(result.intent, "Create a calm mountain scene");
+  assert.deepEqual(result.subjects, ["mountain", "lake"]);
+});
+
 test("rejects blank list entries", () => {
   assert.throws(
     () =>
