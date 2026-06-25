@@ -162,7 +162,7 @@ User request: "${userRequest}"`;
       throw new Error(`Action plan generation failed: ${errorMessage.substring(0, 200)}`);
     }
 
-    throw new Error("An unexpected error occurred while analyzing your request.");
+    throw new Error("An unexpected error occurred while generating the action plan.");
   }
 }
 
@@ -205,19 +205,56 @@ function extractJsonObject(text: string): string | null {
     return null;
   }
 
-  const fencedMatch = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
   if (fencedMatch) {
     trimmed = fencedMatch[1].trim();
   }
 
   const firstBrace = trimmed.indexOf("{");
-  const lastBrace = trimmed.lastIndexOf("}");
 
-  if (firstBrace === -1 || lastBrace <= firstBrace) {
+  if (firstBrace === -1) {
     return null;
   }
 
-  return trimmed.slice(firstBrace, lastBrace + 1);
+  let depth = 0;
+  let isInString = false;
+  let isEscaped = false;
+
+  for (let index = firstBrace; index < trimmed.length; index++) {
+    const char = trimmed[index];
+
+    if (isInString) {
+      if (isEscaped) {
+        isEscaped = false;
+        continue;
+      }
+
+      if (char === "\\") {
+        isEscaped = true;
+        continue;
+      }
+
+      if (char === "\"") {
+        isInString = false;
+      }
+
+      continue;
+    }
+
+    if (char === "\"") {
+      isInString = true;
+    } else if (char === "{") {
+      depth++;
+    } else if (char === "}") {
+      depth--;
+
+      if (depth === 0) {
+        return trimmed.slice(firstBrace, index + 1);
+      }
+    }
+  }
+
+  return null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
