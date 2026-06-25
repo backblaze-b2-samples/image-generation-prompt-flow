@@ -11,12 +11,26 @@ export const ACTION_PLAN_LIMITS = {
 export function parseActionPlanResponse(
   text: string
 ): Omit<ActionPlan, "referenceAnalysis"> {
-  const jsonText = extractJsonObject(text);
+  const jsonCandidates = extractJsonObjectCandidates(text);
 
-  if (!jsonText) {
+  if (jsonCandidates.length === 0) {
     throw new Error("Gemini returned an empty or non-JSON action plan response.");
   }
 
+  let lastError: Error | null = null;
+
+  for (const jsonText of jsonCandidates) {
+    try {
+      return parseActionPlanJson(jsonText);
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error("unknown parse error");
+    }
+  }
+
+  throw lastError || new Error("Gemini returned an invalid action plan response.");
+}
+
+function parseActionPlanJson(jsonText: string): Omit<ActionPlan, "referenceAnalysis"> {
   if (jsonText.length > ACTION_PLAN_LIMITS.maxRawJsonLength) {
     throw new Error(
       `Gemini action plan JSON exceeds ${ACTION_PLAN_LIMITS.maxRawJsonLength} characters.`
@@ -51,11 +65,11 @@ export function parseActionPlanResponse(
   return actionPlan;
 }
 
-function extractJsonObject(text: string): string | null {
+function extractJsonObjectCandidates(text: string): string[] {
   let trimmed = text.trim();
 
   if (!trimmed) {
-    return null;
+    return [];
   }
 
   const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
@@ -63,18 +77,37 @@ function extractJsonObject(text: string): string | null {
     trimmed = fencedMatch[1].trim();
   }
 
-  const firstBrace = trimmed.indexOf("{");
+  const candidates: string[] = [];
+  let searchIndex = 0;
 
-  if (firstBrace === -1) {
-    return null;
+  while (searchIndex < trimmed.length) {
+    const firstBrace = trimmed.indexOf("{", searchIndex);
+
+    if (firstBrace === -1) {
+      break;
+    }
+
+    const lastBrace = findBalancedObjectEnd(trimmed, firstBrace);
+
+    if (lastBrace === null) {
+      searchIndex = firstBrace + 1;
+      continue;
+    }
+
+    candidates.push(trimmed.slice(firstBrace, lastBrace + 1));
+    searchIndex = lastBrace + 1;
   }
 
+  return candidates;
+}
+
+function findBalancedObjectEnd(text: string, firstBrace: number): number | null {
   let depth = 0;
   let isInString = false;
   let isEscaped = false;
 
-  for (let index = firstBrace; index < trimmed.length; index++) {
-    const char = trimmed[index];
+  for (let index = firstBrace; index < text.length; index++) {
+    const char = text[index];
 
     if (isInString) {
       if (isEscaped) {
@@ -102,7 +135,7 @@ function extractJsonObject(text: string): string | null {
       depth--;
 
       if (depth === 0) {
-        return trimmed.slice(firstBrace, index + 1);
+        return index;
       }
     }
   }
@@ -155,6 +188,12 @@ function requireStringArrayField(
   const fieldValue = value[fieldName];
 
   if (Array.isArray(fieldValue)) {
+    if (fieldValue.length === 0) {
+      throw new Error(
+        `Gemini action plan list field "${fieldName}" must include at least one item.`
+      );
+    }
+
     if (fieldValue.length > ACTION_PLAN_LIMITS.maxArrayItems) {
       throw new Error(
         `Gemini action plan list field "${fieldName}" exceeds ${ACTION_PLAN_LIMITS.maxArrayItems} items.`

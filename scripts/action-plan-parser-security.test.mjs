@@ -29,6 +29,15 @@ test("extracts the first balanced object from unfenced responses", () => {
   assert.deepEqual(result.technicalNotes, ["soft morning light", "high detail"]);
 });
 
+test("skips leading non-JSON braces before an action plan", () => {
+  const result = parseActionPlanResponse(
+    `Note: {ignored} before the payload.\n${serializeActionPlan()}`
+  );
+
+  assert.equal(result.intent, "Create a calm mountain scene");
+  assert.deepEqual(result.subjects, ["mountain", "lake"]);
+});
+
 test("rejects blank list entries", () => {
   assert.throws(
     () =>
@@ -38,6 +47,18 @@ test("rejects blank list entries", () => {
         })
       ),
     /subjects.*invalid entry at index 1/
+  );
+});
+
+test("rejects empty list fields with a clear error", () => {
+  assert.throws(
+    () =>
+      parseActionPlanResponse(
+        serializeActionPlan({
+          subjects: [],
+        })
+      ),
+    /subjects.*at least one item/
   );
 });
 
