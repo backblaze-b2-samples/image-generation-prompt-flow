@@ -38,6 +38,15 @@ test("skips leading non-JSON braces before an action plan", () => {
   assert.deepEqual(result.subjects, ["mountain", "lake"]);
 });
 
+test("ignores earlier non-JSON fenced blocks before an action plan", () => {
+  const result = parseActionPlanResponse(
+    `\`\`\`text\n{ignored}\n\`\`\`\n${serializeActionPlan()}`
+  );
+
+  assert.equal(result.intent, "Create a calm mountain scene");
+  assert.deepEqual(result.subjects, ["mountain", "lake"]);
+});
+
 test("rejects blank list entries", () => {
   assert.throws(
     () =>

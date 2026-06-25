@@ -72,7 +72,7 @@ function extractJsonObjectCandidates(text: string): string[] {
     return [];
   }
 
-  const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  const fencedMatch = trimmed.match(/^```json\s*([\s\S]*?)\s*```/i);
   if (fencedMatch) {
     trimmed = fencedMatch[1].trim();
   }
