@@ -1,5 +1,6 @@
 import type { ActionPlan, ThinkingStep, Asset } from "@/types";
 import { downloadImage } from "@/lib/storage/b2-client";
+import { parseActionPlanResponse } from "./action-plan-parser";
 
 // Lazy load GoogleGenAI to avoid blocking dev server startup
 let GoogleGenAIClass: typeof import("@google/genai").GoogleGenAI | null = null;
@@ -132,24 +133,10 @@ User request: "${userRequest}"`;
 
     const text = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-    // Extract JSON from response (handle markdown code blocks)
-    let jsonText = text.trim();
-    if (jsonText.startsWith("```json")) {
-      jsonText = jsonText.slice(7, -3).trim();
-    } else if (jsonText.startsWith("```")) {
-      jsonText = jsonText.slice(3, -3).trim();
-    }
-
-    const analysis = JSON.parse(jsonText);
+    const analysis = parseActionPlanResponse(text);
 
     return {
-      summary: analysis.summary || analysis.intent,
-      intent: analysis.intent,
-      subjects: Array.isArray(analysis.subjects) ? analysis.subjects : [analysis.subjects],
-      style: analysis.style,
-      composition: analysis.composition,
-      mood: analysis.mood,
-      technicalNotes: Array.isArray(analysis.technicalNotes) ? analysis.technicalNotes : [analysis.technicalNotes],
+      ...analysis,
       referenceAnalysis,
     };
   } catch (error) {
@@ -173,10 +160,10 @@ User request: "${userRequest}"`;
       }
 
       // Generic error fallback
-      throw new Error(`Request analysis failed: ${errorMessage.substring(0, 200)}`);
+      throw new Error(`Action plan generation failed: ${errorMessage.substring(0, 200)}`);
     }
 
-    throw new Error("An unexpected error occurred while analyzing your request.");
+    throw new Error("An unexpected error occurred while generating the action plan.");
   }
 }
 
