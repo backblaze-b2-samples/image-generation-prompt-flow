@@ -132,24 +132,10 @@ User request: "${userRequest}"`;
 
     const text = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-    // Extract JSON from response (handle markdown code blocks)
-    let jsonText = text.trim();
-    if (jsonText.startsWith("```json")) {
-      jsonText = jsonText.slice(7, -3).trim();
-    } else if (jsonText.startsWith("```")) {
-      jsonText = jsonText.slice(3, -3).trim();
-    }
-
-    const analysis = JSON.parse(jsonText);
+    const analysis = parseActionPlanResponse(text);
 
     return {
-      summary: analysis.summary || analysis.intent,
-      intent: analysis.intent,
-      subjects: Array.isArray(analysis.subjects) ? analysis.subjects : [analysis.subjects],
-      style: analysis.style,
-      composition: analysis.composition,
-      mood: analysis.mood,
-      technicalNotes: Array.isArray(analysis.technicalNotes) ? analysis.technicalNotes : [analysis.technicalNotes],
+      ...analysis,
       referenceAnalysis,
     };
   } catch (error) {
@@ -178,6 +164,114 @@ User request: "${userRequest}"`;
 
     throw new Error("An unexpected error occurred while analyzing your request.");
   }
+}
+
+function parseActionPlanResponse(text: string): Omit<ActionPlan, "referenceAnalysis"> {
+  const jsonText = extractJsonObject(text);
+
+  if (!jsonText) {
+    throw new Error("Gemini returned an empty or non-JSON request analysis response.");
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(jsonText);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown parse error";
+    throw new Error(`Gemini returned invalid JSON for request analysis: ${message}`);
+  }
+
+  if (!isRecord(parsed)) {
+    throw new Error("Gemini returned a request analysis response that was not a JSON object.");
+  }
+
+  const intent = requireStringField(parsed, "intent");
+
+  return {
+    summary: optionalStringField(parsed, "summary") || intent,
+    intent,
+    subjects: requireStringArrayField(parsed, "subjects"),
+    style: requireStringField(parsed, "style"),
+    composition: requireStringField(parsed, "composition"),
+    mood: requireStringField(parsed, "mood"),
+    technicalNotes: requireStringArrayField(parsed, "technicalNotes"),
+  };
+}
+
+function extractJsonObject(text: string): string | null {
+  let trimmed = text.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const fencedMatch = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  if (fencedMatch) {
+    trimmed = fencedMatch[1].trim();
+  }
+
+  const firstBrace = trimmed.indexOf("{");
+  const lastBrace = trimmed.lastIndexOf("}");
+
+  if (firstBrace === -1 || lastBrace <= firstBrace) {
+    return null;
+  }
+
+  return trimmed.slice(firstBrace, lastBrace + 1);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function requireStringField(
+  value: Record<string, unknown>,
+  fieldName: string
+): string {
+  const fieldValue = value[fieldName];
+
+  if (typeof fieldValue === "string" && fieldValue.trim()) {
+    return fieldValue.trim();
+  }
+
+  throw new Error(`Gemini request analysis is missing required string field "${fieldName}".`);
+}
+
+function optionalStringField(
+  value: Record<string, unknown>,
+  fieldName: string
+): string | undefined {
+  const fieldValue = value[fieldName];
+
+  if (typeof fieldValue === "string" && fieldValue.trim()) {
+    return fieldValue.trim();
+  }
+
+  return undefined;
+}
+
+function requireStringArrayField(
+  value: Record<string, unknown>,
+  fieldName: string
+): string[] {
+  const fieldValue = value[fieldName];
+
+  if (Array.isArray(fieldValue)) {
+    const entries = fieldValue
+      .filter((item): item is string => typeof item === "string")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    if (entries.length > 0) {
+      return entries;
+    }
+  }
+
+  if (typeof fieldValue === "string" && fieldValue.trim()) {
+    return [fieldValue.trim()];
+  }
+
+  throw new Error(`Gemini request analysis is missing required list field "${fieldName}".`);
 }
 
 export async function* generateThinkingTrace(
