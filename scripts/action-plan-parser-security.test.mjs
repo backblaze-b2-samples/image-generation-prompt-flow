@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
@@ -18,6 +18,27 @@ test("accepts a bounded action plan from a fenced Gemini response", () => {
 
   assert.equal(result.intent, "Create a calm mountain scene");
   assert.deepEqual(result.subjects, ["mountain", "lake"]);
+});
+
+test("extracts the first balanced object from unfenced responses", () => {
+  const result = parseActionPlanResponse(
+    `${serializeActionPlan()}\nAdditional text with {ignored} braces.`
+  );
+
+  assert.equal(result.intent, "Create a calm mountain scene");
+  assert.deepEqual(result.technicalNotes, ["soft morning light", "high detail"]);
+});
+
+test("rejects blank list entries", () => {
+  assert.throws(
+    () =>
+      parseActionPlanResponse(
+        serializeActionPlan({
+          subjects: ["mountain", "   "],
+        })
+      ),
+    /subjects.*invalid entry at index 1/
+  );
 });
 
 test("rejects prompt-injected oversized scalar fields", () => {
@@ -98,8 +119,12 @@ async function loadParser() {
   );
   await writeFile(compiledPath, outputText);
 
-  const imported = await import(pathToFileURL(compiledPath).href);
-  return imported.default ?? imported;
+  try {
+    const imported = await import(pathToFileURL(compiledPath).href);
+    return imported.default ?? imported;
+  } finally {
+    await rm(compiledPath, { force: true });
+  }
 }
 
 function serializeActionPlan(overrides = {}) {
