@@ -258,9 +258,15 @@ function requireStringArrayField(
 
   if (Array.isArray(fieldValue)) {
     const entries = fieldValue
-      .filter((item): item is string => typeof item === "string")
-      .map((item) => item.trim())
-      .filter(Boolean);
+      .map((item, index) => {
+        if (typeof item !== "string" || !item.trim()) {
+          throw new Error(
+            `Gemini request analysis list field "${fieldName}" contains an invalid entry at index ${index}.`
+          );
+        }
+
+        return item.trim();
+      });
 
     if (entries.length > 0) {
       return entries;
