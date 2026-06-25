@@ -11,20 +11,21 @@ export const ACTION_PLAN_LIMITS = {
 export function parseActionPlanResponse(
   text: string
 ): Omit<ActionPlan, "referenceAnalysis"> {
-  const jsonCandidates = extractJsonObjectCandidates(text);
-
-  if (jsonCandidates.length === 0) {
-    throw new Error("Gemini returned an empty or non-JSON action plan response.");
-  }
-
+  let hasCandidate = false;
   let lastError: Error | null = null;
 
-  for (const jsonText of jsonCandidates) {
+  for (const jsonText of extractJsonObjectCandidates(text)) {
+    hasCandidate = true;
+
     try {
       return parseActionPlanJson(jsonText);
     } catch (error) {
       lastError = error instanceof Error ? error : new Error("unknown parse error");
     }
+  }
+
+  if (!hasCandidate) {
+    throw new Error("Gemini returned an empty or non-JSON action plan response.");
   }
 
   throw lastError || new Error("Gemini returned an invalid action plan response.");
@@ -65,14 +66,13 @@ function parseActionPlanJson(jsonText: string): Omit<ActionPlan, "referenceAnaly
   return actionPlan;
 }
 
-function extractJsonObjectCandidates(text: string): string[] {
+function* extractJsonObjectCandidates(text: string): Generator<string> {
   let trimmed = text.trim();
 
   if (!trimmed) {
-    return [];
+    return;
   }
 
-  const candidates: string[] = [];
   let searchIndex = 0;
 
   while (searchIndex < trimmed.length) {
@@ -89,11 +89,9 @@ function extractJsonObjectCandidates(text: string): string[] {
       continue;
     }
 
-    candidates.push(trimmed.slice(firstBrace, lastBrace + 1));
+    yield trimmed.slice(firstBrace, lastBrace + 1);
     searchIndex = lastBrace + 1;
   }
-
-  return candidates;
 }
 
 function findBalancedObjectEnd(text: string, firstBrace: number): number | null {
