@@ -273,7 +273,17 @@ test("B2_REGION rejects URL authority injection payloads", () => {
         B2_PUBLIC_URL_BASE: "https://s3.us-west-004.backblazeb2.com/bucket",
         B2_REGION: "us-west-004.backblazeb2.com@evil.example/collect",
       }),
-    /B2_REGION/
+    /B2 region/
+  );
+  assert.throws(
+    () =>
+      resolveB2Config({
+        [legacyB2.region]: "us-west-004.backblazeb2.com@evil.example/collect",
+        [legacyB2.applicationKeyId]: "legacy-key-id",
+        [legacyB2.applicationKey]: "legacy-application-key",
+        [legacyB2.bucketName]: "legacy-bucket",
+      }),
+    /B2 region/
   );
 });
 

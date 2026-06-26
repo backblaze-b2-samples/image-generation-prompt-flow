@@ -91,7 +91,7 @@ function getPresignTtlSeconds(env: B2Environment): number {
 function validateB2Region(region: string): string {
   if (!B2_REGION_PATTERN.test(region)) {
     throw new Error(
-      "B2_REGION must be a Backblaze region identifier"
+      "B2 region must be a Backblaze region identifier"
     );
   }
   return region;
