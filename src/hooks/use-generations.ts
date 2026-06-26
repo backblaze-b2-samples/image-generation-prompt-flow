@@ -37,19 +37,24 @@ export function useGenerations() {
   };
 }
 
-export function useImageUrl(b2Key: string | null | undefined) {
+export function useImageUrl(assetId: string | null | undefined) {
   const [url, setUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (!b2Key) {
+    if (!assetId) {
       setUrl(null);
       return;
     }
 
     setIsLoading(true);
-    fetch(`/api/images/${encodeURIComponent(b2Key)}`)
-      .then((res) => res.json())
+    fetch(`/api/images/${encodeURIComponent(assetId)}`)
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Failed to load image URL");
+        }
+        return res.json();
+      })
       .then((data) => {
         setUrl(data.url);
       })
@@ -59,7 +64,7 @@ export function useImageUrl(b2Key: string | null | undefined) {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [b2Key]);
+  }, [assetId]);
 
   return { url, isLoading };
 }

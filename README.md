@@ -62,6 +62,7 @@ B2_APPLICATION_KEY=your_application_key
 B2_BUCKET_NAME=your-bucket-name
 B2_REGION=us-west-004
 B2_PUBLIC_URL_BASE=https://s3.us-west-004.backblazeb2.com/your-bucket-name
+# Presigned image URL TTL in seconds. Must be between 1 and 604800.
 IMAGE_URL_TTL_SECONDS=900
 
 # OpenAI (DALL-E 3)
@@ -71,7 +72,7 @@ OPENAI_API_KEY=your_openai_api_key
 GOOGLE_AI_API_KEY=...
 ```
 
-> Get your B2 region and public URL base from your [bucket details page](https://secure.backblaze.com/b2_buckets.htm?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=promptflow). The app derives the S3-compatible endpoint from `B2_REGION` and reads `B2_PUBLIC_URL_BASE` into its B2 configuration; image delivery still uses presigned URLs from `/api/images`.
+> Get your B2 region and public URL base from your [bucket details page](https://secure.backblaze.com/b2_buckets.htm?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=promptflow). The app derives the S3-compatible endpoint from `B2_REGION`, reads `B2_PUBLIC_URL_BASE` into its B2 configuration, and serves generated images through asset-id based presigned URLs from `/api/images`.
 
 ### 3. Initialize Database
 
@@ -219,7 +220,9 @@ npm i -g vercel
 vercel
 ```
 
-**Environment Variables**: Add all `.env` variables in Vercel project settings. B2 storage configuration reads `B2_APPLICATION_KEY_ID`, `B2_APPLICATION_KEY`, `B2_BUCKET_NAME`, `B2_REGION`, and `B2_PUBLIC_URL_BASE`; generated image access currently uses presigned URLs.
+**Environment Variables**: Add all `.env` variables in Vercel project settings. B2 storage configuration reads `B2_APPLICATION_KEY_ID`, `B2_APPLICATION_KEY`, `B2_BUCKET_NAME`, `B2_REGION`, and `B2_PUBLIC_URL_BASE`; generated image access uses asset-id based presigned URLs.
+
+**Rolling B2 env migration**: For an expand-contract rollout, first add the new `B2_APPLICATION_KEY_ID`, `B2_APPLICATION_KEY`, `B2_BUCKET_NAME`, `B2_REGION`, and `B2_PUBLIC_URL_BASE` variables while keeping the legacy `B2_S3_ACCESS_KEY_ID`, `B2_S3_SECRET_ACCESS_KEY`, `B2_S3_BUCKET`, `B2_S3_REGION`, `B2_S3_ENDPOINT`, and `B2_S3_PRESIGN_TTL_SECONDS` variables. Deploy this code while both contracts are present. Remove the legacy variables only after old instances have drained.
 
 **Database**: Use Turso, PlanetScale, or mounted storage for SQLite persistence.
 

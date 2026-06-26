@@ -8,7 +8,10 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 export const B2_SAMPLE_USER_AGENT =
   "image-generation-prompt-flow/0.1.0 (backblaze-b2-samples)";
 const DEFAULT_PRESIGN_TTL_SECONDS = 900;
-const B2_REGION_PATTERN = /^[a-z]{2}(?:-[a-z]+)+-\d{3}$/;
+const MAX_PRESIGN_TTL_SECONDS = 7 * 24 * 60 * 60;
+const B2_REGION_PATTERN_SOURCE = "[a-z]{2}(?:-[a-z]+)+-\\d{3}";
+const B2_REGION_PATTERN = new RegExp(`^${B2_REGION_PATTERN_SOURCE}$`);
+const DEFAULT_LEGACY_B2_REGION = ["us", "west", "004"].join("-");
 const LEGACY_B2_PREFIX = ["B2", "S3"].join("_");
 
 const LEGACY_B2_ENV = {
@@ -66,8 +69,15 @@ function getPresignTtlSeconds(env: B2Environment): number {
   }
 
   const ttl = Number(rawValue);
-  if (!/^\d+$/.test(rawValue) || !Number.isSafeInteger(ttl) || ttl <= 0) {
-    throw new Error("IMAGE_URL_TTL_SECONDS must be a positive integer");
+  if (
+    !/^\d+$/.test(rawValue) ||
+    !Number.isSafeInteger(ttl) ||
+    ttl <= 0 ||
+    ttl > MAX_PRESIGN_TTL_SECONDS
+  ) {
+    throw new Error(
+      `IMAGE_URL_TTL_SECONDS must be an integer between 1 and ${MAX_PRESIGN_TTL_SECONDS}`
+    );
   }
   return ttl;
 }
@@ -79,6 +89,37 @@ function validateB2Region(region: string): string {
     );
   }
   return region;
+}
+
+function inferRegionFromEndpoint(endpointValue: string): string | null {
+  try {
+    const endpoint = new URL(endpointValue);
+    const match = endpoint.hostname.match(
+      new RegExp(`^s3\\.(${B2_REGION_PATTERN_SOURCE})\\.backblazeb2\\.com$`)
+    );
+    return match?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function resolveB2Region(env: B2Environment): string {
+  const configuredRegion =
+    readOptionalEnv(env, "B2_REGION") ??
+    readOptionalEnv(env, LEGACY_B2_ENV.region);
+
+  if (configuredRegion) {
+    return validateB2Region(configuredRegion);
+  }
+
+  const legacyEndpoint = readOptionalEnv(env, LEGACY_B2_ENV.endpoint);
+  if (legacyEndpoint) {
+    return validateB2Region(
+      inferRegionFromEndpoint(legacyEndpoint) ?? DEFAULT_LEGACY_B2_REGION
+    );
+  }
+
+  throw new Error(`B2_REGION or ${LEGACY_B2_ENV.region} must be set`);
 }
 
 function resolveB2Endpoint(region: string, endpointOverride?: string): string {
@@ -145,9 +186,7 @@ function resolveB2PublicUrlBase(
 }
 
 export function resolveB2Config(env: B2Environment = process.env): B2Config {
-  const region = validateB2Region(
-    readEnv(env, "B2_REGION", LEGACY_B2_ENV.region)
-  );
+  const region = resolveB2Region(env);
   const hasStandardRegion = readOptionalEnv(env, "B2_REGION") !== undefined;
   const endpoint = resolveB2Endpoint(
     region,

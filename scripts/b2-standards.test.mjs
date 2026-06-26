@@ -9,6 +9,7 @@ import ts from "typescript";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const storageClientPath = "src/lib/storage/b2-client.ts";
+const imageAccessPath = "src/lib/storage/image-access.ts";
 const legacyB2Prefix = ["B2", "S3"].join("_");
 
 const requiredB2Env = [
@@ -45,8 +46,8 @@ function toPlainObject(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-function loadStorageClientModule() {
-  const source = readRepoFile(storageClientPath);
+function loadTypeScriptModule(relativePath) {
+  const source = readRepoFile(relativePath);
   const transpiled = ts.transpileModule(source, {
     compilerOptions: {
       esModuleInterop: true,
@@ -55,7 +56,7 @@ function loadStorageClientModule() {
     },
   });
   const module = { exports: {} };
-  const require = createRequire(path.join(repoRoot, storageClientPath));
+  const require = createRequire(path.join(repoRoot, relativePath));
 
   vm.runInNewContext(
     transpiled.outputText,
@@ -68,10 +69,18 @@ function loadStorageClientModule() {
       process: { env: {} },
       require,
     },
-    { filename: storageClientPath }
+    { filename: relativePath }
   );
 
   return module.exports;
+}
+
+function loadStorageClientModule() {
+  return loadTypeScriptModule(storageClientPath);
+}
+
+function loadImageAccessModule() {
+  return loadTypeScriptModule(imageAccessPath);
 }
 
 function listFiles(directory) {
@@ -145,6 +154,22 @@ test("the storage config resolver supports the legacy env contract", () => {
   });
 });
 
+test("the storage config resolver infers region from legacy endpoint", () => {
+  const { resolveB2Config } = loadStorageClientModule();
+  const config = resolveB2Config({
+    [legacyB2.endpoint]: "https://s3.eu-central-003.backblazeb2.com",
+    [legacyB2.applicationKeyId]: "legacy-key-id",
+    [legacyB2.applicationKey]: "legacy-application-key",
+    [legacyB2.bucketName]: "legacy-bucket",
+  });
+
+  assert.equal(config.region, "eu-central-003");
+  assert.equal(
+    config.endpoint,
+    "https://s3.eu-central-003.backblazeb2.com"
+  );
+});
+
 test("B2_REGION rejects URL authority injection payloads", () => {
   const { resolveB2Config } = loadStorageClientModule();
 
@@ -173,11 +198,15 @@ test("presigned URL TTL rejects non-integer strings", () => {
 
   assert.throws(
     () => resolveB2Config({ ...env, IMAGE_URL_TTL_SECONDS: "10.5" }),
-    /positive integer/
+    /between 1 and 604800/
   );
   assert.throws(
     () => resolveB2Config({ ...env, IMAGE_URL_TTL_SECONDS: "10abc" }),
-    /positive integer/
+    /between 1 and 604800/
+  );
+  assert.throws(
+    () => resolveB2Config({ ...env, IMAGE_URL_TTL_SECONDS: "604801" }),
+    /between 1 and 604800/
   );
 });
 
@@ -214,6 +243,37 @@ test("the S3 client factory applies the Backblaze sample user agent", () => {
     : [client.config.customUserAgent];
 
   assert.ok(userAgentParts.includes(B2_SAMPLE_USER_AGENT));
+});
+
+test("image URL authorization does not sign missing assets", async () => {
+  const { authorizeImageUrl } = loadImageAccessModule();
+  let signCount = 0;
+
+  const url = await authorizeImageUrl(
+    "missing-asset",
+    async () => null,
+    async () => {
+      signCount += 1;
+      return "signed-url";
+    }
+  );
+
+  assert.equal(url, null);
+  assert.equal(signCount, 0);
+});
+
+test("image URL authorization signs the stored asset key", async () => {
+  const { authorizeImageUrl } = loadImageAccessModule();
+  const url = await authorizeImageUrl(
+    "opaque-asset-id",
+    async () => ({ b2Key: "generations/stored/output.png" }),
+    async (b2Key) => {
+      assert.equal(b2Key, "generations/stored/output.png");
+      return "signed-url";
+    }
+  );
+
+  assert.equal(url, "signed-url");
 });
 
 test("source files do not hardcode a Backblaze region", () => {

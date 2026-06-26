@@ -4,13 +4,13 @@ import { useImageUrl } from "@/hooks/use-generations";
 import { Loader2, ImageOff, AlertCircle } from "lucide-react";
 
 interface ImageDisplayProps {
-  b2Key: string | undefined;
+  assetId: string | undefined;
   status: string;
   modelId: string;
 }
 
-export function ImageDisplay({ b2Key, status, modelId }: ImageDisplayProps) {
-  const { url, isLoading: isLoadingUrl } = useImageUrl(b2Key);
+export function ImageDisplay({ assetId, status, modelId }: ImageDisplayProps) {
+  const { url, isLoading: isLoadingUrl } = useImageUrl(assetId);
 
   // Show loading state
   if (status === "running" || status === "pending") {
@@ -35,7 +35,7 @@ export function ImageDisplay({ b2Key, status, modelId }: ImageDisplayProps) {
   }
 
   // Show loading URL state
-  if (isLoadingUrl || (b2Key && !url)) {
+  if (isLoadingUrl || (assetId && !url)) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
         <Loader2 className="w-8 h-8 animate-spin mb-2" />
