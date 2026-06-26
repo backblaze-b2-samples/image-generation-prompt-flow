@@ -157,9 +157,14 @@ function resolveB2Endpoint(region: string, endpointOverride?: string): string {
 function resolveB2PublicUrlBase(
   env: B2Environment,
   endpoint: string,
-  bucketName: string
+  bucketName: string,
+  requireConfigured: boolean
 ): string {
   const configuredUrl = readOptionalEnv(env, "B2_PUBLIC_URL_BASE");
+  if (!configuredUrl && requireConfigured) {
+    throw new Error("B2_PUBLIC_URL_BASE must be set");
+  }
+
   const publicUrlBase =
     configuredUrl ?? `${endpoint}/${encodeURIComponent(bucketName)}`;
 
@@ -186,6 +191,12 @@ function resolveB2PublicUrlBase(
 }
 
 export function resolveB2Config(env: B2Environment = process.env): B2Config {
+  const hasStandardB2Config = [
+    "B2_APPLICATION_KEY_ID",
+    "B2_APPLICATION_KEY",
+    "B2_BUCKET_NAME",
+    "B2_REGION",
+  ].some((name) => readOptionalEnv(env, name) !== undefined);
   const region = resolveB2Region(env);
   const hasStandardRegion = readOptionalEnv(env, "B2_REGION") !== undefined;
   const endpoint = resolveB2Endpoint(
@@ -208,7 +219,12 @@ export function resolveB2Config(env: B2Environment = process.env): B2Config {
       LEGACY_B2_ENV.applicationKey
     ),
     bucketName,
-    publicUrlBase: resolveB2PublicUrlBase(env, endpoint, bucketName),
+    publicUrlBase: resolveB2PublicUrlBase(
+      env,
+      endpoint,
+      bucketName,
+      hasStandardB2Config
+    ),
     presignTtlSeconds: getPresignTtlSeconds(env),
   };
 }

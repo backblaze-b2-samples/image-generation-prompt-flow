@@ -17,9 +17,8 @@ export async function GET(
   _req: Request,
   { params }: { params: { key: string } }
 ) {
-  const assetId = decodeURIComponent(params.key);
-
   try {
+    const assetId = decodeURIComponent(params.key);
     const url = await authorizeImageUrl(
       assetId,
       findAssetById,
@@ -31,6 +30,10 @@ export async function GET(
 
     return Response.json({ url });
   } catch (error) {
+    if (error instanceof URIError) {
+      return Response.json({ error: "Invalid image id" }, { status: 400 });
+    }
+
     return Response.json(
       { error: "Failed to generate presigned URL" },
       { status: 500 }

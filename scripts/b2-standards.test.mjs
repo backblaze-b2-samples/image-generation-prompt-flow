@@ -154,6 +154,21 @@ test("the storage config resolver supports the legacy env contract", () => {
   });
 });
 
+test("the storage config resolver requires public URL for standard env", () => {
+  const { resolveB2Config } = loadStorageClientModule();
+
+  assert.throws(
+    () =>
+      resolveB2Config({
+        B2_APPLICATION_KEY_ID: "new-key-id",
+        B2_APPLICATION_KEY: "new-application-key",
+        B2_BUCKET_NAME: "new-bucket",
+        B2_REGION: "us-west-004",
+      }),
+    /B2_PUBLIC_URL_BASE/
+  );
+});
+
 test("the storage config resolver infers region from legacy endpoint", () => {
   const { resolveB2Config } = loadStorageClientModule();
   const config = resolveB2Config({
