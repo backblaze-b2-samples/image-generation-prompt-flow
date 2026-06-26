@@ -100,8 +100,6 @@ npm run dev
 4. Watch the real-time prompt flow in the middle panel
 5. Compare provider outputs side-by-side in the right panel
 
-> 📖 For detailed setup instructions, see [SETUP.md](SETUP.md)
-
 ## Architecture
 
 ```
