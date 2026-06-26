@@ -71,7 +71,7 @@ OPENAI_API_KEY=your_openai_api_key
 GOOGLE_AI_API_KEY=...
 ```
 
-> Get your B2 region and public URL base from your [bucket details page](https://secure.backblaze.com/b2_buckets.htm?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=promptflow). The app derives the S3-compatible endpoint from `B2_REGION`.
+> Get your B2 region and public URL base from your [bucket details page](https://secure.backblaze.com/b2_buckets.htm?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=promptflow). The app derives the S3-compatible endpoint from `B2_REGION` and reads `B2_PUBLIC_URL_BASE` into its B2 configuration; image delivery still uses presigned URLs from `/api/images`.
 
 ### 3. Initialize Database
 
@@ -219,7 +219,7 @@ npm i -g vercel
 vercel
 ```
 
-**Environment Variables**: Add all `.env` variables in Vercel project settings. B2 storage uses `B2_APPLICATION_KEY_ID`, `B2_APPLICATION_KEY`, `B2_BUCKET_NAME`, `B2_REGION`, and `B2_PUBLIC_URL_BASE`.
+**Environment Variables**: Add all `.env` variables in Vercel project settings. B2 storage configuration reads `B2_APPLICATION_KEY_ID`, `B2_APPLICATION_KEY`, `B2_BUCKET_NAME`, `B2_REGION`, and `B2_PUBLIC_URL_BASE`; generated image access currently uses presigned URLs.
 
 **Database**: Use Turso, PlanetScale, or mounted storage for SQLite persistence.
 

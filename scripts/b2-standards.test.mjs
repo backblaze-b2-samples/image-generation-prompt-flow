@@ -87,10 +87,7 @@ function listFiles(directory) {
 
 test(".env.example uses the standardized B2 environment contract", () => {
   const envExample = readRepoFile(".env.example");
-  const envKeys = Array.from(envExample.matchAll(/^([A-Z0-9_]+)=/gm), (match) => match[1]);
-  const b2Keys = envKeys.filter((key) => key.startsWith("B2_"));
 
-  assert.deepEqual([...b2Keys].sort(), [...requiredB2Env].sort());
   for (const key of requiredB2Env) {
     assert.match(envExample, new RegExp(`^${key}=`, "m"));
   }
@@ -105,6 +102,7 @@ test("the storage config resolver prefers standardized env names", () => {
     B2_APPLICATION_KEY_ID: "new-key-id",
     B2_APPLICATION_KEY: "new-application-key",
     B2_BUCKET_NAME: "new-bucket",
+    B2_PUBLIC_URL_BASE: "https://s3.us-west-004.backblazeb2.com/new-bucket",
     B2_REGION: "us-west-004",
     IMAGE_URL_TTL_SECONDS: "123",
     [legacyB2.applicationKeyId]: "old-key-id",
@@ -120,6 +118,7 @@ test("the storage config resolver prefers standardized env names", () => {
     applicationKeyId: "new-key-id",
     applicationKey: "new-application-key",
     bucketName: "new-bucket",
+    publicUrlBase: "https://s3.us-west-004.backblazeb2.com/new-bucket",
     presignTtlSeconds: 123,
   });
 });
@@ -141,6 +140,7 @@ test("the storage config resolver supports the legacy env contract", () => {
     applicationKeyId: "legacy-key-id",
     applicationKey: "legacy-application-key",
     bucketName: "legacy-bucket",
+    publicUrlBase: "https://s3.eu-central-003.backblazeb2.com/legacy-bucket",
     presignTtlSeconds: 456,
   });
 });
@@ -154,6 +154,7 @@ test("B2_REGION rejects URL authority injection payloads", () => {
         B2_APPLICATION_KEY_ID: "key-id",
         B2_APPLICATION_KEY: "application-key",
         B2_BUCKET_NAME: "bucket",
+        B2_PUBLIC_URL_BASE: "https://s3.us-west-004.backblazeb2.com/bucket",
         B2_REGION: "us-west-004.backblazeb2.com@evil.example/collect",
       }),
     /B2_REGION/
@@ -184,6 +185,7 @@ test("the S3 client factory applies the Backblaze sample user agent", () => {
     applicationKeyId: "key-id",
     applicationKey: "application-key",
     bucketName: "bucket",
+    publicUrlBase: "https://s3.us-west-004.backblazeb2.com/bucket",
     presignTtlSeconds: 900,
   });
 

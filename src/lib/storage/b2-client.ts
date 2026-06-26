@@ -28,6 +28,7 @@ export type B2Config = {
   applicationKeyId: string;
   applicationKey: string;
   bucketName: string;
+  publicUrlBase: string;
   presignTtlSeconds: number;
 };
 
@@ -116,17 +117,50 @@ function resolveB2Endpoint(region: string, endpointOverride?: string): string {
   return endpoint.origin;
 }
 
+function resolveB2PublicUrlBase(
+  env: B2Environment,
+  endpoint: string,
+  bucketName: string
+): string {
+  const configuredUrl = readOptionalEnv(env, "B2_PUBLIC_URL_BASE");
+  const publicUrlBase =
+    configuredUrl ?? `${endpoint}/${encodeURIComponent(bucketName)}`;
+
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(publicUrlBase);
+  } catch {
+    throw new Error("B2_PUBLIC_URL_BASE must be a valid URL");
+  }
+
+  if (
+    parsedUrl.protocol !== "https:" ||
+    parsedUrl.username ||
+    parsedUrl.password ||
+    parsedUrl.search ||
+    parsedUrl.hash
+  ) {
+    throw new Error(
+      "B2_PUBLIC_URL_BASE must be an https URL without credentials, query, or fragment"
+    );
+  }
+
+  return publicUrlBase.replace(/\/+$/, "");
+}
+
 export function resolveB2Config(env: B2Environment = process.env): B2Config {
   const region = validateB2Region(
     readEnv(env, "B2_REGION", LEGACY_B2_ENV.region)
   );
   const hasStandardRegion = readOptionalEnv(env, "B2_REGION") !== undefined;
+  const endpoint = resolveB2Endpoint(
+    region,
+    hasStandardRegion ? undefined : readOptionalEnv(env, LEGACY_B2_ENV.endpoint)
+  );
+  const bucketName = readEnv(env, "B2_BUCKET_NAME", LEGACY_B2_ENV.bucketName);
 
   return {
-    endpoint: resolveB2Endpoint(
-      region,
-      hasStandardRegion ? undefined : readOptionalEnv(env, LEGACY_B2_ENV.endpoint)
-    ),
+    endpoint,
     region,
     applicationKeyId: readEnv(
       env,
@@ -138,7 +172,8 @@ export function resolveB2Config(env: B2Environment = process.env): B2Config {
       "B2_APPLICATION_KEY",
       LEGACY_B2_ENV.applicationKey
     ),
-    bucketName: readEnv(env, "B2_BUCKET_NAME", LEGACY_B2_ENV.bucketName),
+    bucketName,
+    publicUrlBase: resolveB2PublicUrlBase(env, endpoint, bucketName),
     presignTtlSeconds: getPresignTtlSeconds(env),
   };
 }
