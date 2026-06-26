@@ -201,6 +201,20 @@ test("the storage config resolver infers region from legacy endpoint", () => {
   );
 });
 
+test("legacy config without region or endpoint fails fast", () => {
+  const { resolveB2Config } = loadStorageClientModule();
+
+  assert.throws(
+    () =>
+      resolveB2Config({
+        [legacyB2.applicationKeyId]: "legacy-key-id",
+        [legacyB2.applicationKey]: "legacy-application-key",
+        [legacyB2.bucketName]: "legacy-bucket",
+      }),
+    /B2_REGION/
+  );
+});
+
 test("B2_REGION rejects URL authority injection payloads", () => {
   const { resolveB2Config } = loadStorageClientModule();
 

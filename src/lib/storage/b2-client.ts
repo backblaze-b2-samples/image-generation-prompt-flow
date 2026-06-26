@@ -11,7 +11,6 @@ const DEFAULT_PRESIGN_TTL_SECONDS = 900;
 const MAX_PRESIGN_TTL_SECONDS = 7 * 24 * 60 * 60;
 const B2_REGION_PATTERN_SOURCE = "[a-z]{2}(?:-[a-z]+)+-\\d{3}";
 const B2_REGION_PATTERN = new RegExp(`^${B2_REGION_PATTERN_SOURCE}$`);
-const DEFAULT_LEGACY_B2_REGION = ["us", "west", "004"].join("-");
 const LEGACY_B2_PREFIX = ["B2", "S3"].join("_");
 
 const LEGACY_B2_ENV = {
@@ -121,17 +120,6 @@ function resolveB2Region(env: B2Environment): string {
       );
     }
     return validateB2Region(inferredRegion);
-  }
-
-  const hasLegacyB2Config = [
-    LEGACY_B2_ENV.applicationKeyId,
-    LEGACY_B2_ENV.applicationKey,
-    LEGACY_B2_ENV.bucketName,
-    LEGACY_B2_ENV.presignTtlSeconds,
-  ].some((name) => readOptionalEnv(env, name) !== undefined);
-
-  if (hasLegacyB2Config) {
-    return DEFAULT_LEGACY_B2_REGION;
   }
 
   throw new Error(`B2_REGION or ${LEGACY_B2_ENV.region} must be set`);
