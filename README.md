@@ -57,21 +57,21 @@ Edit `.env` with your credentials:
 DATABASE_URL=./data/sqlite.db
 
 # Backblaze B2 (S3-compatible)
-B2_S3_ENDPOINT=https://s3.us-west-004.backblazeb2.com
-B2_S3_REGION=us-west-004
-B2_S3_ACCESS_KEY_ID=your_key_id
-B2_S3_SECRET_ACCESS_KEY=your_secret_key
-B2_S3_BUCKET=your-bucket-name
-B2_S3_PRESIGN_TTL_SECONDS=900
+B2_APPLICATION_KEY_ID=your_key_id
+B2_APPLICATION_KEY=your_application_key
+B2_BUCKET_NAME=your-bucket-name
+B2_REGION=us-west-004
+B2_PUBLIC_URL_BASE=https://s3.us-west-004.backblazeb2.com/your-bucket-name
+IMAGE_URL_TTL_SECONDS=900
 
 # OpenAI (DALL-E 3)
-OPENAI_API_KEY=sk-...
+OPENAI_API_KEY=your_openai_api_key
 
 # Google AI (Gemini Imagen 3.0)
 GOOGLE_AI_API_KEY=...
 ```
 
-> Get your B2 endpoint and region from your [bucket details page](https://secure.backblaze.com/b2_buckets.htm?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=promptflow)
+> Get your B2 region and public URL base from your [bucket details page](https://secure.backblaze.com/b2_buckets.htm?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=promptflow). The app derives the S3-compatible endpoint from `B2_REGION`.
 
 ### 3. Initialize Database
 
@@ -219,7 +219,7 @@ npm i -g vercel
 vercel
 ```
 
-**Environment Variables**: Add all `.env` variables in Vercel project settings.
+**Environment Variables**: Add all `.env` variables in Vercel project settings. B2 storage uses `B2_APPLICATION_KEY_ID`, `B2_APPLICATION_KEY`, `B2_BUCKET_NAME`, `B2_REGION`, and `B2_PUBLIC_URL_BASE`.
 
 **Database**: Use Turso, PlanetScale, or mounted storage for SQLite persistence.
 
