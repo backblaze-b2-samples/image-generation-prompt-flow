@@ -44,11 +44,17 @@ export function useImageUrl(assetId: string | null | undefined) {
   useEffect(() => {
     if (!assetId) {
       setUrl(null);
+      setIsLoading(false);
       return;
     }
 
+    let active = true;
+    const controller = new AbortController();
+
     setIsLoading(true);
-    fetch(`/api/images/${encodeURIComponent(assetId)}`)
+    fetch(`/api/images/${encodeURIComponent(assetId)}`, {
+      signal: controller.signal,
+    })
       .then((res) => {
         if (!res.ok) {
           throw new Error("Failed to load image URL");
@@ -56,14 +62,27 @@ export function useImageUrl(assetId: string | null | undefined) {
         return res.json();
       })
       .then((data) => {
-        setUrl(data.url);
+        if (active) {
+          setUrl(data.url);
+        }
       })
-      .catch(() => {
-        setUrl(null);
+      .catch((error) => {
+        const aborted =
+          error instanceof DOMException && error.name === "AbortError";
+        if (active && !aborted) {
+          setUrl(null);
+        }
       })
       .finally(() => {
-        setIsLoading(false);
+        if (active) {
+          setIsLoading(false);
+        }
       });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [assetId]);
 
   return { url, isLoading };
