@@ -114,9 +114,24 @@ function resolveB2Region(env: B2Environment): string {
 
   const legacyEndpoint = readOptionalEnv(env, LEGACY_B2_ENV.endpoint);
   if (legacyEndpoint) {
-    return validateB2Region(
-      inferRegionFromEndpoint(legacyEndpoint) ?? DEFAULT_LEGACY_B2_REGION
-    );
+    const inferredRegion = inferRegionFromEndpoint(legacyEndpoint);
+    if (!inferredRegion) {
+      throw new Error(
+        `${LEGACY_B2_ENV.endpoint} must be a Backblaze S3 endpoint when region is omitted`
+      );
+    }
+    return validateB2Region(inferredRegion);
+  }
+
+  const hasLegacyB2Config = [
+    LEGACY_B2_ENV.applicationKeyId,
+    LEGACY_B2_ENV.applicationKey,
+    LEGACY_B2_ENV.bucketName,
+    LEGACY_B2_ENV.presignTtlSeconds,
+  ].some((name) => readOptionalEnv(env, name) !== undefined);
+
+  if (hasLegacyB2Config) {
+    return DEFAULT_LEGACY_B2_REGION;
   }
 
   throw new Error(`B2_REGION or ${LEGACY_B2_ENV.region} must be set`);
@@ -195,7 +210,6 @@ export function resolveB2Config(env: B2Environment = process.env): B2Config {
     "B2_APPLICATION_KEY_ID",
     "B2_APPLICATION_KEY",
     "B2_BUCKET_NAME",
-    "B2_REGION",
   ].some((name) => readOptionalEnv(env, name) !== undefined);
   const region = resolveB2Region(env);
   const hasStandardRegion = readOptionalEnv(env, "B2_REGION") !== undefined;

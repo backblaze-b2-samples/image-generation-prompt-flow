@@ -51,6 +51,7 @@ export function useImageUrl(assetId: string | null | undefined) {
     let active = true;
     const controller = new AbortController();
 
+    setUrl(null);
     setIsLoading(true);
     fetch(`/api/images/${encodeURIComponent(assetId)}`, {
       signal: controller.signal,

@@ -1,9 +1,12 @@
 import { db, schema } from "@/lib/db";
-import { authorizeImageUrl } from "@/lib/storage/image-access";
+import {
+  authorizeImageUrl,
+  type AssetLocator,
+} from "@/lib/storage/image-access";
 import { getPresignedUrl } from "@/lib/storage/b2-client";
 import { eq } from "drizzle-orm";
 
-async function findAssetById(assetId: string): Promise<{ b2Key: string } | null> {
+async function findAssetById(assetId: string): Promise<AssetLocator | null> {
   const [asset] = await db
     .select({ b2Key: schema.assets.b2Key })
     .from(schema.assets)
@@ -15,10 +18,10 @@ async function findAssetById(assetId: string): Promise<{ b2Key: string } | null>
 
 export async function GET(
   _req: Request,
-  { params }: { params: { key: string } }
+  { params }: { params: { assetId: string } }
 ) {
   try {
-    const assetId = decodeURIComponent(params.key);
+    const assetId = decodeURIComponent(params.assetId);
     const url = await authorizeImageUrl(
       assetId,
       findAssetById,

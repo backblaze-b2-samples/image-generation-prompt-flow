@@ -169,6 +169,22 @@ test("the storage config resolver requires public URL for standard env", () => {
   );
 });
 
+test("the storage config resolver allows region-only standard migration", () => {
+  const { resolveB2Config } = loadStorageClientModule();
+  const config = resolveB2Config({
+    B2_REGION: "us-west-004",
+    [legacyB2.applicationKeyId]: "legacy-key-id",
+    [legacyB2.applicationKey]: "legacy-application-key",
+    [legacyB2.bucketName]: "legacy-bucket",
+  });
+
+  assert.equal(config.region, "us-west-004");
+  assert.equal(
+    config.publicUrlBase,
+    "https://s3.us-west-004.backblazeb2.com/legacy-bucket"
+  );
+});
+
 test("the storage config resolver infers region from legacy endpoint", () => {
   const { resolveB2Config } = loadStorageClientModule();
   const config = resolveB2Config({
@@ -233,6 +249,21 @@ test("legacy endpoint fallback must match the selected B2 region", () => {
       resolveB2Config({
         [legacyB2.endpoint]: "https://evil.example",
         [legacyB2.region]: "us-west-004",
+        [legacyB2.applicationKeyId]: "key-id",
+        [legacyB2.applicationKey]: "application-key",
+        [legacyB2.bucketName]: "bucket",
+      }),
+    new RegExp(legacyB2.endpoint)
+  );
+});
+
+test("legacy endpoint without region must be a Backblaze S3 endpoint", () => {
+  const { resolveB2Config } = loadStorageClientModule();
+
+  assert.throws(
+    () =>
+      resolveB2Config({
+        [legacyB2.endpoint]: "https://evil.example",
         [legacyB2.applicationKeyId]: "key-id",
         [legacyB2.applicationKey]: "application-key",
         [legacyB2.bucketName]: "bucket",
