@@ -169,6 +169,23 @@ test("the storage config resolver requires public URL for standard env", () => {
   );
 });
 
+test("the storage config resolver normalizes public URL base", () => {
+  const { resolveB2Config } = loadStorageClientModule();
+  const config = resolveB2Config({
+    B2_APPLICATION_KEY_ID: "new-key-id",
+    B2_APPLICATION_KEY: "new-application-key",
+    B2_BUCKET_NAME: "new-bucket",
+    B2_REGION: "us-west-004",
+    B2_PUBLIC_URL_BASE:
+      "https://s3.us-west-004.backblazeb2.com/path/../new-bucket/",
+  });
+
+  assert.equal(
+    config.publicUrlBase,
+    "https://s3.us-west-004.backblazeb2.com/new-bucket"
+  );
+});
+
 test("the storage config resolver allows region-only standard migration", () => {
   const { resolveB2Config } = loadStorageClientModule();
   const config = resolveB2Config({

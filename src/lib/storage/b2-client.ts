@@ -190,7 +190,7 @@ function resolveB2PublicUrlBase(
     );
   }
 
-  return publicUrlBase.replace(/\/+$/, "");
+  return parsedUrl.href.replace(/\/+$/, "");
 }
 
 export function resolveB2Config(env: B2Environment = process.env): B2Config {
