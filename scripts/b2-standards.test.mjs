@@ -231,6 +231,22 @@ test("the storage config resolver allows default HTTPS legacy endpoint port", ()
   assert.equal(config.endpoint, "https://s3.eu-central-003.backblazeb2.com");
 });
 
+test("the storage config resolver rejects non-default legacy endpoint ports", () => {
+  const { resolveB2Config } = loadStorageClientModule();
+
+  assert.throws(
+    () =>
+      resolveB2Config({
+        [legacyB2.endpoint]: "https://s3.eu-central-003.backblazeb2.com:444",
+        [legacyB2.region]: "eu-central-003",
+        [legacyB2.applicationKeyId]: "legacy-key-id",
+        [legacyB2.applicationKey]: "legacy-application-key",
+        [legacyB2.bucketName]: "legacy-bucket",
+      }),
+    new RegExp(legacyB2.endpoint)
+  );
+});
+
 test("legacy config without region or endpoint fails fast", () => {
   const { resolveB2Config } = loadStorageClientModule();
 

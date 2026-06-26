@@ -139,10 +139,12 @@ function resolveB2Endpoint(region: string, endpointOverride?: string): string {
     throw new Error(`${LEGACY_B2_ENV.endpoint} must be a valid URL`);
   }
 
+  const hasUnsupportedPort = endpoint.port && endpoint.port !== "443";
+
   if (
     endpoint.protocol !== "https:" ||
     endpoint.hostname !== expectedHostname ||
-    endpoint.port ||
+    hasUnsupportedPort ||
     endpoint.username ||
     endpoint.password ||
     endpoint.pathname !== "/" ||
@@ -154,7 +156,7 @@ function resolveB2Endpoint(region: string, endpointOverride?: string): string {
     );
   }
 
-  return endpoint.origin;
+  return `https://${expectedHostname}`;
 }
 
 function resolveB2PublicUrlBase(
