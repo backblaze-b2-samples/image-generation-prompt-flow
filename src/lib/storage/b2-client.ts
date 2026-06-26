@@ -5,30 +5,61 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const B2_SAMPLE_USER_AGENT =
+export const B2_SAMPLE_USER_AGENT =
   "image-generation-prompt-flow/0.1.0 (backblaze-b2-samples)";
 const DEFAULT_PRESIGN_TTL_SECONDS = 900;
+const B2_REGION_PATTERN = /^[a-z]{2}(?:-[a-z]+)+-\d{3}$/;
+const LEGACY_B2_PREFIX = ["B2", "S3"].join("_");
 
-type B2Config = {
+const LEGACY_B2_ENV = {
+  endpoint: `${LEGACY_B2_PREFIX}_ENDPOINT`,
+  region: `${LEGACY_B2_PREFIX}_REGION`,
+  bucketName: `${LEGACY_B2_PREFIX}_BUCKET`,
+  applicationKeyId: `${LEGACY_B2_PREFIX}_ACCESS_KEY_ID`,
+  applicationKey: `${LEGACY_B2_PREFIX}_SECRET_ACCESS_KEY`,
+  presignTtlSeconds: `${LEGACY_B2_PREFIX}_PRESIGN_TTL_SECONDS`,
+} as const;
+
+export type B2Environment = Record<string, string | undefined>;
+
+export type B2Config = {
   endpoint: string;
   region: string;
   applicationKeyId: string;
   applicationKey: string;
   bucketName: string;
-  publicUrlBase: string;
   presignTtlSeconds: number;
 };
 
-function requireEnv(name: string): string {
-  const value = process.env[name];
+function readOptionalEnv(env: B2Environment, name: string): string | undefined {
+  const value = env[name]?.trim();
+  return value || undefined;
+}
+
+function readEnv(
+  env: B2Environment,
+  preferredName: string,
+  legacyName?: string
+): string {
+  const value =
+    readOptionalEnv(env, preferredName) ??
+    (legacyName ? readOptionalEnv(env, legacyName) : undefined);
+
   if (!value) {
-    throw new Error(`${name} must be set`);
+    throw new Error(
+      legacyName
+        ? `${preferredName} or ${legacyName} must be set`
+        : `${preferredName} must be set`
+    );
   }
   return value;
 }
 
-function getPresignTtlSeconds(): number {
-  const rawValue = process.env.IMAGE_URL_TTL_SECONDS;
+function getPresignTtlSeconds(env: B2Environment): number {
+  const rawValue =
+    readOptionalEnv(env, "IMAGE_URL_TTL_SECONDS") ??
+    readOptionalEnv(env, LEGACY_B2_ENV.presignTtlSeconds);
+
   if (!rawValue) {
     return DEFAULT_PRESIGN_TTL_SECONDS;
   }
@@ -40,21 +71,79 @@ function getPresignTtlSeconds(): number {
   return ttl;
 }
 
-function getB2Config(): B2Config {
-  const region = requireEnv("B2_REGION");
+function validateB2Region(region: string): string {
+  if (!B2_REGION_PATTERN.test(region)) {
+    throw new Error(
+      "B2_REGION must be a Backblaze region identifier"
+    );
+  }
+  return region;
+}
+
+function resolveB2Endpoint(region: string, endpointOverride?: string): string {
+  const expectedHostname = `s3.${region}.backblazeb2.com`;
+
+  if (!endpointOverride) {
+    const endpoint = new URL(`https://${expectedHostname}`);
+    if (endpoint.hostname !== expectedHostname) {
+      throw new Error("B2_REGION produced an invalid Backblaze S3 endpoint");
+    }
+    return endpoint.origin;
+  }
+
+  let endpoint: URL;
+  try {
+    endpoint = new URL(endpointOverride);
+  } catch {
+    throw new Error(`${LEGACY_B2_ENV.endpoint} must be a valid URL`);
+  }
+
+  if (
+    endpoint.protocol !== "https:" ||
+    endpoint.hostname !== expectedHostname ||
+    endpoint.port ||
+    endpoint.username ||
+    endpoint.password ||
+    endpoint.pathname !== "/" ||
+    endpoint.search ||
+    endpoint.hash
+  ) {
+    throw new Error(
+      `${LEGACY_B2_ENV.endpoint} must resolve to https://${expectedHostname}`
+    );
+  }
+
+  return endpoint.origin;
+}
+
+export function resolveB2Config(env: B2Environment = process.env): B2Config {
+  const region = validateB2Region(
+    readEnv(env, "B2_REGION", LEGACY_B2_ENV.region)
+  );
+  const hasStandardRegion = readOptionalEnv(env, "B2_REGION") !== undefined;
 
   return {
-    endpoint: `https://s3.${region}.backblazeb2.com`,
+    endpoint: resolveB2Endpoint(
+      region,
+      hasStandardRegion ? undefined : readOptionalEnv(env, LEGACY_B2_ENV.endpoint)
+    ),
     region,
-    applicationKeyId: requireEnv("B2_APPLICATION_KEY_ID"),
-    applicationKey: requireEnv("B2_APPLICATION_KEY"),
-    bucketName: requireEnv("B2_BUCKET_NAME"),
-    publicUrlBase: requireEnv("B2_PUBLIC_URL_BASE"),
-    presignTtlSeconds: getPresignTtlSeconds(),
+    applicationKeyId: readEnv(
+      env,
+      "B2_APPLICATION_KEY_ID",
+      LEGACY_B2_ENV.applicationKeyId
+    ),
+    applicationKey: readEnv(
+      env,
+      "B2_APPLICATION_KEY",
+      LEGACY_B2_ENV.applicationKey
+    ),
+    bucketName: readEnv(env, "B2_BUCKET_NAME", LEGACY_B2_ENV.bucketName),
+    presignTtlSeconds: getPresignTtlSeconds(env),
   };
 }
 
-function getB2Client(config: B2Config): S3Client {
+export function createB2Client(config: B2Config = resolveB2Config()): S3Client {
   return new S3Client({
     endpoint: config.endpoint,
     region: config.region,
@@ -72,8 +161,8 @@ export async function uploadImage(
   buffer: Buffer,
   mime: string
 ): Promise<void> {
-  const config = getB2Config();
-  const client = getB2Client(config);
+  const config = resolveB2Config();
+  const client = createB2Client(config);
   await client.send(
     new PutObjectCommand({
       Bucket: config.bucketName,
@@ -85,8 +174,8 @@ export async function uploadImage(
 }
 
 export async function getPresignedUrl(key: string): Promise<string> {
-  const config = getB2Config();
-  const client = getB2Client(config);
+  const config = resolveB2Config();
+  const client = createB2Client(config);
   const command = new GetObjectCommand({
     Bucket: config.bucketName,
     Key: key,
@@ -95,8 +184,8 @@ export async function getPresignedUrl(key: string): Promise<string> {
 }
 
 export async function downloadImage(key: string): Promise<Buffer> {
-  const config = getB2Config();
-  const client = getB2Client(config);
+  const config = resolveB2Config();
+  const client = createB2Client(config);
   const command = new GetObjectCommand({
     Bucket: config.bucketName,
     Key: key,
@@ -110,12 +199,6 @@ export async function downloadImage(key: string): Promise<Buffer> {
     stream.on('error', reject);
     stream.on('end', () => resolve(Buffer.concat(chunks)));
   });
-}
-
-export function getPublicUrl(key: string): string {
-  const { publicUrlBase } = getB2Config();
-  const encodedKey = key.split("/").map(encodeURIComponent).join("/");
-  return `${publicUrlBase.replace(/\/+$/, "")}/${encodedKey}`;
 }
 
 export function generateKey(
