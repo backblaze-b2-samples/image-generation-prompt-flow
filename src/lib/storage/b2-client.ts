@@ -85,11 +85,7 @@ function resolveB2Endpoint(region: string, endpointOverride?: string): string {
   const expectedHostname = `s3.${region}.backblazeb2.com`;
 
   if (!endpointOverride) {
-    const endpoint = new URL(`https://${expectedHostname}`);
-    if (endpoint.hostname !== expectedHostname) {
-      throw new Error("B2_REGION produced an invalid Backblaze S3 endpoint");
-    }
-    return endpoint.origin;
+    return `https://${expectedHostname}`;
   }
 
   let endpoint: URL;
