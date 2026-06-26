@@ -65,8 +65,8 @@ function getPresignTtlSeconds(env: B2Environment): number {
     return DEFAULT_PRESIGN_TTL_SECONDS;
   }
 
-  const ttl = parseInt(rawValue, 10);
-  if (!Number.isFinite(ttl) || ttl <= 0) {
+  const ttl = Number(rawValue);
+  if (!/^\d+$/.test(rawValue) || !Number.isSafeInteger(ttl) || ttl <= 0) {
     throw new Error("IMAGE_URL_TTL_SECONDS must be a positive integer");
   }
   return ttl;

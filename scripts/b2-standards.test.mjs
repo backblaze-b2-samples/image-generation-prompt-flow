@@ -161,6 +161,26 @@ test("B2_REGION rejects URL authority injection payloads", () => {
   );
 });
 
+test("presigned URL TTL rejects non-integer strings", () => {
+  const { resolveB2Config } = loadStorageClientModule();
+  const env = {
+    B2_APPLICATION_KEY_ID: "key-id",
+    B2_APPLICATION_KEY: "application-key",
+    B2_BUCKET_NAME: "bucket",
+    B2_PUBLIC_URL_BASE: "https://s3.us-west-004.backblazeb2.com/bucket",
+    B2_REGION: "us-west-004",
+  };
+
+  assert.throws(
+    () => resolveB2Config({ ...env, IMAGE_URL_TTL_SECONDS: "10.5" }),
+    /positive integer/
+  );
+  assert.throws(
+    () => resolveB2Config({ ...env, IMAGE_URL_TTL_SECONDS: "10abc" }),
+    /positive integer/
+  );
+});
+
 test("legacy endpoint fallback must match the selected B2 region", () => {
   const { resolveB2Config } = loadStorageClientModule();
 
