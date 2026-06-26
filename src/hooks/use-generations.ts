@@ -37,29 +37,55 @@ export function useGenerations() {
   };
 }
 
-export function useImageUrl(b2Key: string | null | undefined) {
-  const [url, setUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+export function useImageUrl(assetId: string | null | undefined) {
+  const normalizedAssetId = assetId ?? null;
+  const [state, setState] = useState({
+    assetId: normalizedAssetId,
+    url: null as string | null,
+    isLoading: Boolean(normalizedAssetId),
+  });
 
   useEffect(() => {
-    if (!b2Key) {
-      setUrl(null);
+    if (!assetId) {
+      setState({ assetId: null, url: null, isLoading: false });
       return;
     }
 
-    setIsLoading(true);
-    fetch(`/api/images/${encodeURIComponent(b2Key)}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setUrl(data.url);
-      })
-      .catch(() => {
-        setUrl(null);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [b2Key]);
+    let active = true;
+    const controller = new AbortController();
 
-  return { url, isLoading };
+    setState({ assetId, url: null, isLoading: true });
+    fetch(`/api/images/${encodeURIComponent(assetId)}`, {
+      signal: controller.signal,
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Failed to load image URL");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (active) {
+          setState({ assetId, url: data.url ?? null, isLoading: false });
+        }
+      })
+      .catch((error) => {
+        const aborted =
+          error instanceof DOMException && error.name === "AbortError";
+        if (active && !aborted) {
+          setState({ assetId, url: null, isLoading: false });
+        }
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [assetId]);
+
+  if (state.assetId !== normalizedAssetId) {
+    return { url: null, isLoading: Boolean(normalizedAssetId) };
+  }
+
+  return { url: state.url, isLoading: state.isLoading };
 }

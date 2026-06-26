@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "test:action-plan": "node --test scripts/action-plan-parser-security.test.mjs",
+    "test:b2-standards": "node --test scripts/b2-standards.test.mjs",
     "db:generate": "drizzle-kit generate:sqlite",
     "db:push": "drizzle-kit push:sqlite",
     "db:studio": "drizzle-kit studio"

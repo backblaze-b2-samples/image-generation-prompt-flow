@@ -50,10 +50,10 @@ export function ModelComparison({
     );
   }
 
-  const getImageKey = (modelId: string): string | undefined => {
+  const getImageAssetId = (modelId: string): string | undefined => {
     // Check stream first for live updates
-    if (streamModelStatus?.[modelId]?.b2Key) {
-      return streamModelStatus[modelId].b2Key;
+    if (streamModelStatus?.[modelId]?.assetId) {
+      return streamModelStatus[modelId].assetId;
     }
 
     // Fall back to stored generation
@@ -66,7 +66,7 @@ export function ModelComparison({
         const asset = generation.assets.find(
           (a) => a.runId === run.id && a.role === "output"
         );
-        return asset?.b2Key;
+        return asset?.id;
       }
     }
 
@@ -156,7 +156,7 @@ export function ModelComparison({
               <ModelPanel
                 key={modelId}
                 modelId={modelId}
-                b2Key={getImageKey(modelId)}
+                assetId={getImageAssetId(modelId)}
                 status={getModelStatus(modelId)}
                 versions={getVersionsForModel(modelId)}
                 selectedVersion={selectedVersions[modelId] || 1}
@@ -175,7 +175,7 @@ export function ModelComparison({
 
 interface ModelPanelProps {
   modelId: string;
-  b2Key: string | undefined;
+  assetId: string | undefined;
   status: string;
   versions: number[];
   selectedVersion: number;
@@ -188,7 +188,7 @@ interface ModelPanelProps {
 
 function ModelPanel({
   modelId,
-  b2Key,
+  assetId,
   status,
   versions,
   selectedVersion,
@@ -229,7 +229,7 @@ function ModelPanel({
         )}
       </div>
       <div className="aspect-square bg-muted/20">
-        <ImageDisplay b2Key={b2Key} status={status} modelId={modelId} />
+        <ImageDisplay assetId={assetId} status={status} modelId={modelId} />
       </div>
     </div>
   );
