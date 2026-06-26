@@ -59,14 +59,21 @@ function readEnv(
 }
 
 function getPresignTtlSeconds(env: B2Environment): number {
-  const rawValue =
-    readOptionalEnv(env, "IMAGE_URL_TTL_SECONDS") ??
-    readOptionalEnv(env, LEGACY_B2_ENV.presignTtlSeconds);
+  const imageUrlTtlSeconds = readOptionalEnv(env, "IMAGE_URL_TTL_SECONDS");
+  const legacyTtlSeconds = readOptionalEnv(
+    env,
+    LEGACY_B2_ENV.presignTtlSeconds
+  );
+  const rawValue = imageUrlTtlSeconds ?? legacyTtlSeconds;
 
   if (!rawValue) {
     return DEFAULT_PRESIGN_TTL_SECONDS;
   }
 
+  const envName =
+    imageUrlTtlSeconds !== undefined
+      ? "IMAGE_URL_TTL_SECONDS"
+      : LEGACY_B2_ENV.presignTtlSeconds;
   const ttl = Number(rawValue);
   if (
     !/^\d+$/.test(rawValue) ||
@@ -75,7 +82,7 @@ function getPresignTtlSeconds(env: B2Environment): number {
     ttl > MAX_PRESIGN_TTL_SECONDS
   ) {
     throw new Error(
-      `IMAGE_URL_TTL_SECONDS must be an integer between 1 and ${MAX_PRESIGN_TTL_SECONDS}`
+      `${envName} must be an integer between 1 and ${MAX_PRESIGN_TTL_SECONDS}`
     );
   }
   return ttl;

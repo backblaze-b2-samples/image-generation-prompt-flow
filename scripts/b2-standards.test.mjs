@@ -299,6 +299,18 @@ test("presigned URL TTL rejects non-integer strings", () => {
     () => resolveB2Config({ ...env, IMAGE_URL_TTL_SECONDS: "604801" }),
     /between 1 and 604800/
   );
+  assert.throws(
+    () =>
+      resolveB2Config({
+        [legacyB2.endpoint]: "https://s3.eu-central-003.backblazeb2.com",
+        [legacyB2.region]: "eu-central-003",
+        [legacyB2.applicationKeyId]: "legacy-key-id",
+        [legacyB2.applicationKey]: "legacy-application-key",
+        [legacyB2.bucketName]: "legacy-bucket",
+        [legacyB2.presignTtlSeconds]: "10abc",
+      }),
+    new RegExp(`${legacyB2.presignTtlSeconds}.*between 1 and 604800`)
+  );
 });
 
 test("legacy endpoint fallback must match the selected B2 region", () => {
