@@ -38,21 +38,23 @@ export function useGenerations() {
 }
 
 export function useImageUrl(assetId: string | null | undefined) {
-  const [url, setUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const normalizedAssetId = assetId ?? null;
+  const [state, setState] = useState({
+    assetId: normalizedAssetId,
+    url: null as string | null,
+    isLoading: Boolean(normalizedAssetId),
+  });
 
   useEffect(() => {
     if (!assetId) {
-      setUrl(null);
-      setIsLoading(false);
+      setState({ assetId: null, url: null, isLoading: false });
       return;
     }
 
     let active = true;
     const controller = new AbortController();
 
-    setUrl(null);
-    setIsLoading(true);
+    setState({ assetId, url: null, isLoading: true });
     fetch(`/api/images/${encodeURIComponent(assetId)}`, {
       signal: controller.signal,
     })
@@ -64,19 +66,14 @@ export function useImageUrl(assetId: string | null | undefined) {
       })
       .then((data) => {
         if (active) {
-          setUrl(data.url);
+          setState({ assetId, url: data.url ?? null, isLoading: false });
         }
       })
       .catch((error) => {
         const aborted =
           error instanceof DOMException && error.name === "AbortError";
         if (active && !aborted) {
-          setUrl(null);
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setIsLoading(false);
+          setState({ assetId, url: null, isLoading: false });
         }
       });
 
@@ -86,5 +83,9 @@ export function useImageUrl(assetId: string | null | undefined) {
     };
   }, [assetId]);
 
-  return { url, isLoading };
+  if (state.assetId !== normalizedAssetId) {
+    return { url: null, isLoading: Boolean(normalizedAssetId) };
+  }
+
+  return { url: state.url, isLoading: state.isLoading };
 }
