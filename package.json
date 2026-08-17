@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "test:action-plan": "node --test scripts/action-plan-parser-security.test.mjs",
     "test:b2-standards": "node --test scripts/b2-standards.test.mjs",
     "db:generate": "drizzle-kit generate:sqlite",
@@ -48,6 +48,8 @@
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.0",
     "drizzle-kit": "^0.31.10",
+    "eslint": "^9",
+    "eslint-config-next": "^16.3.1",
     "postcss": "^8.5.23",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.4.0"
@@ -83,5 +85,8 @@
     "picomatch@4": "^4.0.4",
     "protobufjs": "^7.6.5",
     "ws": "^8.21.3"
+  },
+  "engines": {
+    "node": ">=20.9.0"
   }
 }
