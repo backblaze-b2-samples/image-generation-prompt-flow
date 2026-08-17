@@ -18,10 +18,11 @@ async function findAssetById(assetId: string): Promise<AssetLocator | null> {
 
 export async function GET(
   _req: Request,
-  { params }: { params: { assetId: string } }
+  { params }: { params: Promise<{ assetId: string }> }
 ) {
   try {
-    const assetId = decodeURIComponent(params.assetId);
+    const { assetId: encodedAssetId } = await params;
+    const assetId = decodeURIComponent(encodedAssetId);
     const url = await authorizeImageUrl(
       assetId,
       findAssetById,
