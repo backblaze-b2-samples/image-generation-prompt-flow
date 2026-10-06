@@ -162,16 +162,15 @@ Perfect for demonstrating **transparent AI image generation workflows** for:
 ### Image Generation Models
 
 **OpenAI (gpt-image-1 / gpt-image-2)**
-- **Resolution**: 1024x1024, 1792x1024, 1024x1792
-- **Quality**: Standard or HD
-- **Style**: Natural or Vivid
-- **Pricing**: ~$0.04-0.12 per image
+- **Resolution**: 1024x1024 (configured in `src/lib/providers/openai.ts`)
+- **Quality**: `high`
+- **Output**: PNG returned as base64
+- **Pricing**: Varies by model and quality; see the OpenAI pricing page
 
 **Google Gemini (gemini-3-pro-image / gemini-3.1-flash-image)**
-- **Resolution**: 1024x1024, 1536x1536, up to 2048x2048
-- **Quality**: High-fidelity photorealism
-- **Aspect Ratios**: Square, landscape, portrait
-- **Pricing**: Varies by resolution
+- **Resolution**: 2K (`imageSize: "2K"`, configured in `src/lib/providers/gemini.ts`)
+- **Aspect Ratio**: 1:1
+- **Pricing**: Varies by model and resolution; see the Gemini API pricing page
 
 ### Prompt Flow Pipeline
 
