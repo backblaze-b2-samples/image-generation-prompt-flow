@@ -29,7 +29,7 @@ A polished reference application demonstrating **side-by-side comparison** of Op
 
 ### Prerequisites
 
-- **Node.js 18+** - [Download here](https://nodejs.org/)
+- **Node.js 24+** - [Download here](https://nodejs.org/)
 - **[Backblaze B2 Account](https://www.backblaze.com/sign-up/cloud-storage?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=promptflow)** (free tier available)
   - Create a bucket
   - Generate an Application Key with `readFiles`, `writeFiles` permissions
