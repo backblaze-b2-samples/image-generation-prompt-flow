@@ -6,7 +6,7 @@ A polished reference application demonstrating **side-by-side comparison** of Op
 
 ## 🚀 Technologies
 
-- **[Next.js 14+](https://nextjs.org)** - React framework with App Router and Server Actions
+- **[Next.js 16](https://nextjs.org)** - React framework with App Router and Server Actions
 - **[TypeScript](https://www.typescriptlang.org)** - Type-safe development with strict mode
 - **[OpenAI gpt-image-1](https://platform.openai.com/docs/guides/images)** - DALL-E 3 image generation API
 - **[Google Gemini Imagen 3.0](https://ai.google.dev/gemini-api/docs/imagen)** - State-of-the-art text-to-image generation
