@@ -8,14 +8,14 @@ export interface ModelConfig {
 
 export const IMAGE_MODELS: ModelConfig[] = [
   {
-    id: "gemini-3-pro-image-preview",
+    id: "gemini-3-pro-image",
     provider: "gemini",
     type: "multimodal",
   },
   {
-    id: "imagen-4.0-generate-001",
+    id: "gemini-3.1-flash-image",
     provider: "gemini",
-    type: "imagen",
+    type: "multimodal",
   },
   {
     id: "gpt-image-1",
@@ -23,9 +23,9 @@ export const IMAGE_MODELS: ModelConfig[] = [
     type: "multimodal",
   },
   {
-    id: "dall-e-3",
+    id: "gpt-image-2",
     provider: "openai",
-    type: "dalle",
+    type: "multimodal",
   },
 ];
 

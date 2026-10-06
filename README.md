@@ -8,8 +8,8 @@ A polished reference application demonstrating **side-by-side comparison** of Op
 
 - **[Next.js 16](https://nextjs.org)** - React framework with App Router and Server Actions
 - **[TypeScript](https://www.typescriptlang.org)** - Type-safe development with strict mode
-- **[OpenAI image models](https://platform.openai.com/docs/guides/images)** - `gpt-image-1` and `dall-e-3`
-- **[Google Gemini image models](https://ai.google.dev/gemini-api/docs/image-generation)** - `gemini-3-pro-image-preview` and `imagen-4.0-generate-001`
+- **[OpenAI image models](https://platform.openai.com/docs/guides/images)** - `gpt-image-1` and `gpt-image-2`
+- **[Google Gemini image models](https://ai.google.dev/gemini-api/docs/image-generation)** - `gemini-3-pro-image` and `gemini-3.1-flash-image`
 - **[Backblaze B2](https://www.backblaze.com/b2/cloud-storage.html?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=promptflow)** - S3-compatible cloud storage at $6/TB/month
 - **[Drizzle ORM](https://orm.drizzle.team)** - Type-safe database queries with SQLite
 - **Server-Sent Events** - Real-time streaming of generation pipeline
@@ -33,8 +33,8 @@ A polished reference application demonstrating **side-by-side comparison** of Op
 - **[Backblaze B2 Account](https://www.backblaze.com/sign-up/cloud-storage?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=promptflow)** (free tier available)
   - Create a bucket
   - Generate an Application Key with `readFiles`, `writeFiles` permissions
-- **[OpenAI API Key](https://platform.openai.com/api-keys)** (for DALL-E 3 / gpt-image-1)
-- **[Google AI API Key](https://aistudio.google.com/app/apikey)** (for Gemini and Imagen)
+- **[OpenAI API Key](https://platform.openai.com/api-keys)** (for gpt-image-1 / gpt-image-2)
+- **[Google AI API Key](https://aistudio.google.com/app/apikey)** (for Gemini)
 
 ### 1. Clone & Install
 
@@ -65,10 +65,10 @@ B2_PUBLIC_URL_BASE=https://s3.us-west-004.backblazeb2.com/your-bucket-name
 # Presigned image URL TTL in seconds. Must be between 1 and 604800.
 IMAGE_URL_TTL_SECONDS=900
 
-# OpenAI (gpt-image-1, dall-e-3)
+# OpenAI (gpt-image-1, gpt-image-2)
 OPENAI_API_KEY=your_openai_api_key
 
-# Google AI (Gemini, Imagen 4)
+# Google AI (Gemini)
 GOOGLE_AI_API_KEY=...
 ```
 
@@ -161,17 +161,16 @@ Perfect for demonstrating **transparent AI image generation workflows** for:
 
 ### Image Generation Models
 
-**OpenAI (gpt-image-1 / DALL-E 3)**
-- **Resolution**: 1024x1024, 1792x1024, 1024x1792
-- **Quality**: Standard or HD
-- **Style**: Natural or Vivid
-- **Pricing**: ~$0.04-0.12 per image
+**OpenAI (gpt-image-1 / gpt-image-2)**
+- **Resolution**: 1024x1024 (configured in `src/lib/providers/openai.ts`)
+- **Quality**: `high`
+- **Output**: PNG returned as base64
+- **Pricing**: Varies by model and quality; see the OpenAI pricing page
 
-**Google Gemini (gemini-3-pro-image-preview / Imagen 4)**
-- **Resolution**: 1024x1024, 1536x1536, up to 2048x2048
-- **Quality**: High-fidelity photorealism
-- **Aspect Ratios**: Square, landscape, portrait
-- **Pricing**: Varies by resolution
+**Google Gemini (gemini-3-pro-image / gemini-3.1-flash-image)**
+- **Resolution**: 2K (`imageSize: "2K"`, configured in `src/lib/providers/gemini.ts`)
+- **Aspect Ratio**: 1:1
+- **Pricing**: Varies by model and resolution; see the Gemini API pricing page
 
 ### Prompt Flow Pipeline
 
@@ -281,8 +280,8 @@ npm run db:push
 
 ## 📚 Learn More
 
-- **[OpenAI Image Generation Guide](https://platform.openai.com/docs/guides/images)** - DALL-E 3 API documentation
-- **[Google Gemini Imagen Docs](https://ai.google.dev/gemini-api/docs/imagen)** - Imagen text-to-image guide
+- **[OpenAI Image Generation Guide](https://platform.openai.com/docs/guides/images)** - OpenAI image generation API documentation
+- **[Google Gemini Image Generation Docs](https://ai.google.dev/gemini-api/docs/image-generation)** - Gemini image generation guide
 - **[Next.js Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations)** - Server-side mutations and streaming
 - **[Backblaze B2 Documentation](https://www.backblaze.com/b2/docs/?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=promptflow)** - Cloud storage API docs
 - **[Drizzle ORM](https://orm.drizzle.team/docs/overview)** - Type-safe database toolkit
@@ -290,7 +289,7 @@ npm run db:push
 
 ## Keywords
 
-**AI Image Generation**, **Multi-Provider Comparison**, **OpenAI DALL-E 3**, **Google Gemini Imagen**, **Prompt Engineering**, **Next.js**, **TypeScript**, **Server-Sent Events**, **Real-time Streaming**, **Backblaze B2**, **S3-Compatible Storage**, **Drizzle ORM**, **SQLite**, **Side-by-Side Comparison**
+**AI Image Generation**, **Multi-Provider Comparison**, **OpenAI gpt-image**, **Google Gemini Image**, **Prompt Engineering**, **Next.js**, **TypeScript**, **Server-Sent Events**, **Real-time Streaming**, **Backblaze B2**, **S3-Compatible Storage**, **Drizzle ORM**, **SQLite**, **Side-by-Side Comparison**
 
 ## Troubleshooting
 
@@ -301,7 +300,7 @@ npm run db:push
 **Solution**:
 1. Verify API keys in `.env` are correct and active
 2. Check OpenAI key has billing enabled
-3. Ensure Google AI API key has Imagen API enabled
+3. Ensure Google AI API key has access to the Gemini image models (a paid plan may be required)
 4. Restart dev server after changing `.env`
 
 ### B2 Upload Failures
@@ -342,7 +341,7 @@ npm run db:push
 - Ensure sufficient API credits
 
 **Google Gemini**:
-- Confirm the Imagen and Gemini image models are available in your region
+- Confirm the Gemini image models are available in your region
 - Check prompt doesn't exceed token limits
 - Verify safety settings allow content
 

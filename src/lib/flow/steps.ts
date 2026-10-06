@@ -38,7 +38,7 @@ async function analyzeReferenceImages(assets: Asset[]): Promise<string> {
     );
 
     const response = await client.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.5-flash",
       contents: [
         {
           role: "user",
@@ -127,7 +127,7 @@ Return your analysis in this exact JSON format:
 User request: "${userRequest}"`;
 
     const response = await client.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.5-flash",
       contents: systemPrompt,
     });
 
@@ -246,7 +246,7 @@ ${actionPlan.referenceAnalysis ? "8" : "7"}. **Technical Specifications**: Defin
 For each step, provide detailed reasoning with specific examples and choices. Use markdown formatting with bullet points for clarity. Be thorough and precise.`;
 
     const stream = await client.models.generateContentStream({
-      model: "gemini-2.5-pro",
+      model: "gemini-3.5-flash",
       contents: prompt,
     });
 
@@ -396,7 +396,7 @@ ${actionPlan.referenceAnalysis ? "6" : "5"}. **Be comprehensive yet concise** - 
 Return ONLY the final prompt text, nothing else. Make it production-ready for professional image generation.`;
 
     const response = await client.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.5-flash",
       contents: systemPrompt,
     });
 
